@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>JSON Bible Preview</title>
+
+        <link rel="icon" type="image/png" href="../JSON_bible_icon.png" />
+
+        <link rel="stylesheet" href="style.css" />
+        <script type="importmap">
+            {
+                "imports": {
+                    "bible": "../dist/index.js"
+                }
+            }
+        </script>
+    </head>
+
+    <body>
+        <header>
+            <h3 id="name"></h3>
+
+            <div class="search">
+                <input type="text" name="" id="bookSearch" placeholder="Book search... [John 3:16]" />
+                <input type="text" name="" id="textSearch" placeholder="Text search... [Jesus]" />
+            </div>
+        </header>
+
+        <div class="searchResults hidden"></div>
+
+        <div class="bible">
+            <div class="books">Loading...</div>
+            <div class="chapters"></div>
+
+            <div class="header"></div>
+            <div class="content">
+                <div class="invert">
+                    <button id="previous">←</button>
+                    <div class="verses"></div>
+                </div>
+                <button id="next">→</button>
+            </div>
+
+            <div class="footer"></div>
+        </div>
+
+        <!-- <mark> can be used to highlight verses! -->
+
+        <script src="domHelper.js"></script>
+        <script type="module">
+            import Bible from "bible"
+
+            const KJV_BIBLE = "https://api.npoint.io/a906dacba84513c298ce"
+            const bible = await Bible(KJV_BIBLE)
+            console.log("BIBLE:", bible)
+
+            const metadata = bible.getMetadata()
+            nameElem.innerHTML = `${metadata.title} (${bible.getAbbreviation()})`
+            footerElem.innerHTML = metadata.copyright || ""
+
+            // MAIN //
+
+            setBible()
+            function setBible() {
+                const hashed = location.hash.slice(1).split(".").filter(Boolean)
+                setBook(hashed[0], hashed[1])
+
+                const click = (id) => setBook(id)
+                const style = (a) => `border-bottom: 2px solid ${bible.getBook(a.number).getCategory().color}`
+                setHTML(booksElem, bible.data.books, (a) => a.name, { type: "book" }, click, style)
+            }
+
+            function setBook(bookId, chapterId) {
+                const book = bible.getBook(bookId)
+
+                const click = (id) => setChapter(bookId, id)
+                setHTML(chaptersElem, book.data.chapters, (a) => a.number, { type: "chapter" }, click)
+
+                // timeout to allow book elems to load before setting active
+                setTimeout(() => {
+                    setActive(booksElem, book.number)
+                    setChapter(bookId, chapterId || undefined)
+                })
+            }
+
+            function setChapter(bookId, chapterId) {
+                const book = bible.getBook(bookId)
+                const chapter = book.getChapter(chapterId)
+
+                headerElem.innerHTML = chapter.data.header || ""
+                versesElem.innerHTML = ""
+                createElement(versesElem, chapter.getVerses().getHTML(true), { type: "verse" })
+
+                // get all cross reference links
+                ;[...versesElem.querySelectorAll(".cross-ref-id")].forEach((elem) => {
+                    elem.addEventListener("click", () => {
+                        openReference(elem.id)
+                    })
+                })
+
+                location.hash = `${book.data.id}.${chapter.number}`
+                setActive(chaptersElem, chapter.number)
+            }
+
+            // NAVIGATE //
+
+            nextElem.addEventListener("click", () => nextOrPrevious(true))
+            previousElem.addEventListener("click", () => nextOrPrevious(false))
+
+            function nextOrPrevious(next) {
+                let currentBookNumber = getActiveId(booksElem)
+                let currentChapterNumber = getActiveId(chaptersElem)
+
+                const chapter = bible.getBook(currentBookNumber).getChapter(currentChapterNumber)
+                const ref = next ? chapter.getNext() : chapter.getPrevious()
+
+                if (ref) setBook(ref.book, ref.chapter)
+            }
+
+            // SEARCH //
+
+            bookSearch.addEventListener("input", (e) => {
+                let value = e.target.value
+
+                const searchResult = bible.bookSearch(value)
+                console.log("BOOK SEARCH:", searchResult)
+
+                e.target.value = searchResult.autocompleted
+
+                if (searchResult.book) setBook(searchResult.book, searchResult.chapter)
+            })
+
+            textSearch.addEventListener("change", (e) => {
+                let value = e.target.value
+
+                if (value) hideElem(bibleElem, searchResultsElem)
+                else hideElem(searchResultsElem, bibleElem)
+
+                const searchResults = bible.textSearch(value, 100)
+                console.log("TEXT SEARCH:", searchResults)
+
+                if (!searchResults.length) {
+                    searchResultsElem.innerHTML = "No results!"
+                    return
+                }
+
+                setHTML(searchResultsElem, searchResults, (a) => `<b>${a.reference}</b> ${a.verse.text}`, { type: "searchItem" }, openReference)
+            })
+
+            function openReference(id) {
+                const ref = bible.getFromReference(id)[0]
+                if (!ref) return
+
+                textSearch.value = ""
+                hideElem(searchResultsElem, bibleElem)
+
+                setBook(ref.book, ref.chapter)
+            }
+        </script>
+    </body>
+</html>

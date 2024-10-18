@@ -1,0 +1,216 @@
+* {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1.1em;
+    background-color: #fff9ee;
+}
+
+input,
+button {
+    color: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    background-color: inherit;
+    user-select: none;
+
+    border: 1px solid black;
+    border-radius: 2px;
+    padding: 3px 8px;
+}
+
+input::placeholder {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+.active {
+    text-decoration: underline;
+    background-color: rgb(0 0 0 / 0.08);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* MAIN */
+
+header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 20px 10vw;
+    background-color: rgb(0 0 0 / 8%);
+}
+
+.bible {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    margin: 30px 10vw;
+}
+
+.books,
+.chapters {
+    display: flex;
+    flex-wrap: wrap;
+    /* justify-content: space-between; */
+}
+.chapters {
+    margin-bottom: 20px;
+}
+
+.books div,
+.chapters div {
+    padding: 5px;
+    min-width: 24px;
+    text-align: center;
+    /* font-family: monospace; */
+
+    user-select: none;
+}
+.books div {
+    white-space: nowrap;
+    padding: 5px 8px;
+    /* flex: 1; */
+}
+
+.content,
+.invert {
+    display: flex;
+    /* align-items: center; */
+    gap: 20px;
+}
+
+button {
+    background-color: transparent;
+    border: none;
+
+    font-family: monospace;
+    font-size: 2.5em;
+}
+
+.header,
+.footer {
+    text-align: center;
+}
+
+.verse {
+    font-size: 1.2em;
+    font-family: "Times New Roman", Times, serif;
+}
+
+.number {
+    font-weight: bold;
+    user-select: none;
+}
+.number.big {
+    font-size: 2em;
+}
+
+.uncertain {
+    font-style: italic;
+    opacity: 0.8;
+}
+h4 {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.cross-ref {
+    position: relative;
+}
+.cross-ref::before {
+    content: "*";
+    padding: 0 2px;
+    color: blue;
+}
+.cross-ref .content {
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    transform: translateY(100%);
+
+    display: block;
+
+    background-color: rgb(0 0 0 / 0.6);
+    color: white;
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-width: 130px;
+
+    transition: opacity 0.2s;
+
+    opacity: 0;
+    pointer-events: none;
+}
+.cross-ref:hover > .content {
+    opacity: 1;
+    pointer-events: inherit;
+}
+.cross-ref-id {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* SEARCH */
+
+.searchResults {
+    display: flex;
+    flex-direction: column;
+
+    margin: 30px 10vw;
+}
+.searchResults div {
+    padding: 8px 12px;
+}
+
+/* HOVER */
+
+button,
+.books div,
+.chapters div,
+.searchResults div {
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 2px;
+}
+
+button:hover,
+.books div:hover,
+.chapters div:hover,
+.searchResults div:hover {
+    background-color: rgb(0 0 0 / 0.1);
+}
+
+/* MEDIA */
+
+@media only screen and (max-width: 800px) {
+    .content {
+        flex-wrap: wrap;
+        gap: 0;
+        position: relative;
+    }
+    .invert {
+        flex-direction: column-reverse;
+    }
+    .verses {
+        width: 100%;
+    }
+
+    .content button {
+        width: 50%;
+    }
+    .content #next {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+}
