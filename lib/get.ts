@@ -34,28 +34,28 @@ export function _getShortName(bible: Bible) {
 // MAIN //
 
 export function getBookIndex(bible: Bible, numberOrName: string | number) {
-    if (isNumber(numberOrName)) return bible.books.findIndex((a) => a.number === Number(numberOrName))
+    if (isNumber(numberOrName)) return bible.books.findIndex((a) => Number(a.number) === Number(numberOrName))
     return bible.books.findIndex((a) => a.name === numberOrName || a.id === numberOrName)
 }
 
 export function _getBook(bible: Bible, index: number) {
-    return bible.books[index] || getDefault().book
+    return bible.books[index] || bible.books[0] || getDefault().book
 }
 
 export function getChapterIndex(book: Book, number: number) {
-    return book.chapters.findIndex((a) => a.number === Number(number))
+    return book.chapters.findIndex((a) => Number(a.number) === Number(number))
 }
 
 export function _getChapter(book: Book, index: number) {
-    return book.chapters[index] || getDefault().chapter
+    return book.chapters[index] || book.chapters[0] || getDefault().chapter
 }
 
 export function getVerseIndex(chapter: Chapter, number: number) {
-    return chapter.verses.findIndex((a) => a.number === number || (a.endNumber && number > a.number && number <= a.endNumber))
+    return chapter.verses.findIndex((a) => Number(a.number) === Number(number) || (a.endNumber && Number(number) > Number(a.number) && Number(number) <= Number(a.endNumber)))
 }
 
 export function _getVerse(chapter: Chapter, index: number) {
-    return chapter.verses[index] || getDefault().verse
+    return chapter.verses[index] || chapter.verses[0] || getDefault().verse
 }
 
 // BOOK //
@@ -74,6 +74,30 @@ export function getBookName(numberOrId: number | string, bible?: Bible) {
 
     if (isNumber(numberOrId)) return getDefaultBooks().byNumber(Number(numberOrId))
     return getDefaultBooks().byId(numberOrId.toString())
+}
+
+export function getBookAbbreviation(bible: Bible, bookIndex: number) {
+    const currentBook = bible.books[bookIndex]
+    if (!currentBook) return ""
+
+    if (currentBook.abbreviation) return currentBook.abbreviation
+
+    const abbr = currentBook.id || ""
+    const name = currentBook.name
+    const defaultBookName = (getDefaultBooks().data as any)[abbr]
+
+    if (name === defaultBookName) return abbr[0] + abbr.slice(1).toLowerCase()
+
+    const hasNumber = isNaN(parseInt(name[0]))
+    let shortName = hasNumber ? name.slice(0, 3) : name.replace(/[^\w]/g, "").slice(0, 4)
+
+    // use four characters if same short name ("Jud"ges="Jud"e)
+    if (shortName.length === 3 && bible.books.some((a) => a.abbreviation === shortName)) {
+        shortName = name.slice(0, 4)
+    }
+
+    currentBook.abbreviation = shortName
+    return shortName
 }
 
 // CHAPTER //

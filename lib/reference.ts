@@ -110,7 +110,7 @@ function parseUniversalReference(ref: UniversalReference) {
 
 // Genesis 1:1-3 / GEN 1:1-3 / GEN.1.1-3 = 1.1.1-3
 function referenceStringToId(ref: string) {
-    const regex = /^(?:[A-Z]+|[0-9]+)(?:\.[0-9]+)?(?:\.[0-9+-]+)?$/
+    const regex = /^(?:[\p{Lu}]+|[0-9]+)(?:\.[0-9]+)?(?:\.[0-9+-]+)?$/u
     const isId = ref.match(regex) !== null
     if (isId) return parseReferenceId(ref)
 
@@ -127,7 +127,7 @@ function referenceStringToId(ref: string) {
 // "Genesis 1:1-3" = { book: "Genesis ", chapter: 1, verses: [1, 2, 3] }
 function splitReferenceString(ref: string) {
     // (:,.) allowed between chapter/verse - (-+) allowed between verses
-    const regex = /(?<book>[1-3]?\s?[A-Za-z]+)(?:\s(?<chapter>\d+))?(?:[:,.](?<verses>[0-9,.\-+]+))?/
+    const regex = /(?<book>(?:\d+\.?\s?)?[\p{L}](?:[\p{L}\s']*[\p{L}])?)(?:\s(?<chapter>\d+))?(?:[:,.](?<verses>[0-9,.\-+]+))?/u
     const match = ref.match(regex)
 
     if (!match) return { book: "", chapter: "", verses: "" }
@@ -143,9 +143,14 @@ function splitReferenceString(ref: string) {
 // VERSE REFERENCE //
 
 // [1, 2, 3] = "1-3" / [4, 2, 7, 1, 9, 10] = "1-2+4+7+9-10"
-function getVerseReference(verses: number[]) {
+// WIP reference array might also contain subverses e.g. ["1_b", 2, "6_a"], which will become "1b-2+6a"
+function getVerseReference(verses: (number | string)[]) {
     // sort in ascending order
-    verses.sort((a, b) => a - b)
+    verses.sort((a, b) => {
+        const numA = typeof a === "number" ? a : Number(a.split("_")[0])
+        const numB = typeof b === "number" ? b : Number(b.split("_")[0])
+        return numA - numB
+    })
 
     let verseRef = ""
     let i = 0
@@ -153,7 +158,7 @@ function getVerseReference(verses: number[]) {
     while (i < verses.length) {
         // get consecutive verses
         let start = verses[i]
-        while (i < verses.length - 1 && verses[i] + 1 === verses[i + 1]) i++
+        while (i < verses.length - 1 && Number(verses[i]) + 1 === Number(verses[i + 1])) i++
         let end = verses[i]
 
         // if start and end are the same add the number, if not add the range

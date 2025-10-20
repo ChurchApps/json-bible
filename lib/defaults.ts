@@ -32,6 +32,7 @@ export function getDefaultMetadata() {
 // BOOKS
 
 const BOOKS = {
+    // GT
     GEN: "Genesis",
     EXO: "Exodus",
     LEV: "Leviticus",
@@ -57,21 +58,22 @@ const BOOKS = {
     ISA: "Isaiah",
     JER: "Jeremiah",
     LAM: "Lamentations",
-    EZE: "Ezekiel",
+    EZK: "Ezekiel",
     DAN: "Daniel",
     HOS: "Hosea",
-    JOE: "Joel",
+    JOL: "Joel",
     AMO: "Amos",
     OBA: "Obadiah",
     JON: "Jonah",
     MIC: "Micah",
-    NAH: "Nahum",
+    NAM: "Nahum",
     HAB: "Habakkuk",
     ZEP: "Zephaniah",
     HAG: "Haggai",
     ZEC: "Zechariah",
     MAL: "Malachi",
 
+    // NT
     MAT: "Matthew",
     MRK: "Mark",
     LUK: "Luke",
@@ -98,7 +100,18 @@ const BOOKS = {
     "2JN": "2 John",
     "3JN": "3 John",
     JUD: "Jude",
-    REV: "Revelation"
+    REV: "Revelation",
+
+    // APOCRYPHA
+    TOB: "Tobit",
+    JDT: "Judith",
+    ESG: "Esther (Greek)",
+    WIS: "Wisdom",
+    SIR: "Sirach",
+    BAR: "Baruch",
+    LJE: "Letter of Jeremiah",
+    "1MA": "1 Maccabees",
+    "2MA": "2 Maccabees"
 }
 type BookId = keyof typeof BOOKS
 
@@ -109,7 +122,8 @@ const categories = [
     { id: "prophets", start: "ISA", name: "Prophets", color: "#42e84d" },
     { id: "gospels", start: "MAT", name: "The Gospels & Acts", color: "#42c4e8" },
     { id: "letters", start: "ROM", name: "Letters", color: "#e8de42" }, // #b542e8
-    { id: "prophecy", start: "REV", name: "Apocalyptic", color: "#e842e5" }
+    { id: "prophecy", start: "REV", name: "Apocalyptic", color: "#e842e5" },
+    { id: "apocrypha", start: "TOB", name: "Apocrypha", color: "#8269fa" }
 ]
 
 export function getDefaultBooks() {
@@ -128,9 +142,23 @@ export function getDefaultBooks() {
 }
 
 export function getBookCategory(book: Book) {
-    return categories.find((a, i) => {
-        const startNumber = Object.keys(BOOKS).indexOf(a.start) + 1
-        const endNumber = Object.keys(BOOKS).indexOf(categories[i + 1]?.start) + 1 || startNumber + 1
-        return book.number >= startNumber && book.number < endNumber
-    })
+    const bookId = book.id
+    const bookNumber = book.number
+
+    const defaults = getDefaultBooks()
+
+    let currentIndex = defaults.ids.indexOf(bookId as any)
+    if (bookId?.length === 3 && currentIndex < 0) return null
+
+    if (currentIndex < 0) currentIndex = bookNumber - 1
+    if (currentIndex > defaults.names.length - 1) return null
+
+    // find category based on current index
+    let categoryIndex = 0
+    for (let i = 0; i < categories.length; i++) {
+        const startIndex = defaults.ids.indexOf(categories[i].start as any)
+        if (currentIndex >= startIndex) categoryIndex = i
+    }
+
+    return categories[categoryIndex]
 }

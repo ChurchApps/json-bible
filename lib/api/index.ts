@@ -1,28 +1,49 @@
-import { Bible } from "./lib/Bible"
-import { BIBLE_SIZE, getBookCategory, getDefault, getDefaultBooks, NT_SIZE, OT_SIZE } from "./lib/defaults"
-import { _getBible, _getBook, _getChapter, _getCloseChapter, _getHTML, _getMetadata, _getRandomVerse, _getShortName, _getText, _getVerse, formatText, getBookAbbreviation, getBookIndex, getChapterIndex, getVerseIndex } from "./lib/get"
-import { getReferenceString, getVerseReferences } from "./lib/reference"
-import { _bookSearch, _textSearch } from "./lib/search"
-import "./lib/api/index" // api alternative reader (same structure)
+import { BIBLE_SIZE, getBookCategory, getDefault, getDefaultBooks, NT_SIZE, OT_SIZE } from "../defaults"
+import { _getBook, _getChapter, _getCloseChapter, _getHTML, _getMetadata, _getShortName, _getText, _getVerse, formatText, getBookAbbreviation, getBookIndex, getChapterIndex, getVerseIndex } from "../get"
+import { getReferenceString, getVerseReferences, VerseReference } from "../reference"
+import { _bookSearch } from "../search"
+import ApiBibleHelper from "./get"
+
+///// API BIBLE (requests one part at a time) /////
+// Works with the Bible.API format
+// Any custom API URL uses a smaller, but similar format (see ApiBible.ts)
+// Used by FreeShow Presentation Software through the ChurchApps ContentAPI
 
 /**
- * JSON Bible Helper
- * @param bibleOrPath path to Bible file or a Bible JSON object
+ * API.Bible Bibles List
+ * @param apiKey API key from https://api.bible
+ * @param apiUrl custom api URL
+ * @returns
  */
-export default async function Bible(bibleOrPath: Bible | string) {
-    const bible = await _getBible(bibleOrPath)
+export function ApiBiblesList(apiKey: string, apiUrl?: string) {
+    return ApiBibleHelper(apiKey, apiUrl).getBibles()
+}
 
-    return { data: bible, getBook, getAbbreviation, getMetadata, getBooksData, getDefaultBooks, getDefault, getOT, getNT, getRandom, getFromReference, bookSearch, textSearch }
+/**
+ * API.Bible Helper
+ * @param apiKey API key from https://api.bible
+ * @param apiUrl custom api URL
+ */
+export async function ApiBible(apiKey: string, bibleKey: string, apiUrl?: string) {
+    const apiData = await ApiBibleHelper(apiKey, apiUrl)
+    const bibleData = await apiData.bible(bibleKey)
+    const bible = bibleData.json
+
+    return { data: bible, getBook, getAbbreviation, getMetadata, getBooksData, getDefaultBooks, getDefault, getOT, getNT, getFromReference, bookSearch, textSearch }
 
     /**
      * Get a specified book or the first one if not provided
      * @param number book number/name/id
      * @return book data
      */
-    function getBook(numberOrName?: string | number) {
-        if (numberOrName === undefined) numberOrName = bible.books[0].number
-        let bookIndex = getBookIndex(bible, numberOrName)
+    async function getBook(numberOrId?: string | number) {
+        if (numberOrId === undefined) numberOrId = bible.books[0].number
+        let bookIndex = getBookIndex(bible, numberOrId)
         const book = _getBook(bible, bookIndex)
+
+        const bookId = bible.books[bookIndex]?.id || ""
+        const chapters = await bibleData.getChapters(bookId)
+        book.chapters = chapters.json
 
         return { data: book, index: bookIndex, number: book.number, name: book.name, getChapter, getAbbreviation: getNameShort, getCategory }
 
@@ -31,10 +52,14 @@ export default async function Bible(bibleOrPath: Bible | string) {
          * @param number chapter number
          * @return chapter data
          */
-        function getChapter(number?: number) {
+        async function getChapter(number?: number) {
             if (number === undefined) number = book.chapters[0].number
             let chapterIndex = getChapterIndex(book, number)
             const chapter = _getChapter(book, chapterIndex)
+
+            const chapterId = `${bookId}.${number}`
+            const verses = await bibleData.getVerses(chapterId)
+            chapter.verses = verses.json
 
             return { data: chapter, index: chapterIndex, number, getVerse, getVerses, getNext, getPrevious, getReference }
 
@@ -222,14 +247,6 @@ export default async function Bible(bibleOrPath: Bible | string) {
     }
 
     /**
-     * Get a random verse
-     * @return random verse
-     */
-    function getRandom() {
-        return _getRandomVerse(bible)
-    }
-
-    /**
      * Get book/chapter/verses from a string reference
      * @param value e.g. "Genesis 1:1-3" / "GEN.1.2-3" / "1.1.1"
      * @return matching content
@@ -254,7 +271,23 @@ export default async function Bible(bibleOrPath: Bible | string) {
      * @param bookNumber search only in a specified book
      * @return an array of verses
      */
-    function textSearch(value: string, limit: number = 500, bookNumber?: number) {
-        return _textSearch(bible, value, limit, bookNumber)
+    async function textSearch(value: string, limit: number = 50) {
+        const result = await bibleData.contentSearch(value, { limit })
+
+        // convert result to VerseReference[]
+        return result.map((r) => {
+            const bookIndex = bible.books.findIndex((b) => b.id === r.bookId)
+            const book = bookIndex >= 0 ? bookIndex + 1 : r.bookId
+            const chapter = Number(r.id.split(".")[1])
+            const verse = Number(r.id.split(".")[2])
+
+            return {
+                book,
+                chapter,
+                verse: { number: verse, text: r.text },
+                reference: r.reference,
+                id: `${r.bookId}.${chapter}.${verse}`
+            } as VerseReference
+        })
     }
 }

@@ -9,6 +9,7 @@ export interface Bible {
 export type Book = {
     number: number // starting from 1
     name: string // e.g. "Genesis"
+    abbreviation?: string // e.g. "Gen"
     id?: string // e.g. "GEN"
 
     chapters: Chapter[]

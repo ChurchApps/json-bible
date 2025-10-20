@@ -1,4 +1,5 @@
 import { Bible } from "./Bible"
+import { getDefaultBooks } from "./defaults"
 import { getBookIndex } from "./get"
 import { getReferenceFromSearchString, getReferenceString, getVerseReferences, SearchReference, VerseReference } from "./reference"
 
@@ -31,8 +32,24 @@ export function _bookSearch(bible: Bible, searchValue: string) {
     returnValue.chapter = chapter.number
 
     const verses = findVerses(reference.verses)
+    if (!verses.length) {
+        // add divider (:) automatically if space at end
+        if (searchValue.endsWith(" ") && !searchValue.trim().includes(":")) returnValue.autocompleted = returnValue.autocompleted.trim() + ":"
+        else returnValue.autocompleted = returnValue.autocompleted.trim()
+
+        return finish()
+    }
     returnValue.verses = verses.map(({ number }) => number)
     returnValue.versesContent = verses
+
+    // add divider (+/-) automatically if space at end
+    if (searchValue.endsWith(" ") && !searchValue.trim().endsWith("-") && !searchValue.trim().endsWith("+")) {
+        const minus = (searchValue.match(/-/g) || []).length
+        const plus = (searchValue.match(/\+/g) || []).length
+        returnValue.autocompleted = returnValue.autocompleted.trim() + (minus === plus ? "-" : "+")
+    } else {
+        returnValue.autocompleted = returnValue.autocompleted.trim()
+    }
 
     return finish()
 
@@ -44,14 +61,19 @@ export function _bookSearch(bible: Bible, searchValue: string) {
     }
 
     function findBooks(name: string) {
-        const formatText = (a: string) => a.replace(/\s/g, "").toLowerCase()
-        name = formatText(name)
+        name = removeSpaces(formatText(name))
 
         let matches = []
         for (let book of bible.books) {
-            const bookName = formatText(book.name)
+            const bookName = removeSpaces(formatText(book.name))
             if (bookName === name) return [book]
             if (bookName.includes(name)) matches.push(book)
+        }
+
+        // find any abbreviation matches
+        for (let book of bible.books) {
+            let abbr = getDefaultBooks().ids[book.number - 1] || ""
+            if (abbr.toLowerCase() === name) return [book]
         }
 
         // remove books with numbers if no number at search start (John)
@@ -62,11 +84,11 @@ export function _bookSearch(bible: Bible, searchValue: string) {
     }
 
     function findChapter(number: number) {
-        return book.chapters.find((a) => a.number === number)
+        return book.chapters.find((a) => Number(a.number) === number)
     }
 
     function findVerses(verses: number[]) {
-        return chapter?.verses.filter((a) => verses.includes(a.number)) || []
+        return chapter?.verses.filter((a) => verses.includes(Number(a.number))) || []
     }
 }
 
@@ -74,7 +96,6 @@ export function _bookSearch(bible: Bible, searchValue: string) {
 
 let textSearchCache: { [key: string]: string } = {}
 export function _textSearch(bible: Bible, searchValue: string, limit: number, bookNumber?: number) {
-    const formatText = (a: string) => a.replace(/[`!*()-?;:'",.]/gi, "").toLowerCase()
     searchValue = formatText(searchValue).trim()
     if (!searchValue.length) return []
 
@@ -119,4 +140,21 @@ export function _textSearch(bible: Bible, searchValue: string, limit: number, bo
 
         return matches
     }
+}
+
+// HELPERS //
+
+function formatText(text: string) {
+    return (
+        text
+            // replace diacritic values like á -> a & ö -> o
+            .normalize("NFD")
+            .replace(/\p{Diacritic}/gu, "")
+            // remove special characters
+            .replace(/[`!*()\-?;:'",.]/gi, "")
+            .toLowerCase()
+    )
+}
+function removeSpaces(text: string) {
+    return text.replace(/\s/g, "")
 }
