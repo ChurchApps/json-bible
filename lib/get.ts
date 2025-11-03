@@ -60,16 +60,23 @@ export function _getVerse(chapter: Chapter, index: number) {
 
 // BOOK //
 
-export function getBookNumber(numberOrNameOrId: number | string, bible?: Bible) {
+export function getBookNumber(numberOrNameOrId: number | string, bible?: Bible, bookIndexFallback?: number) {
     if (isNumber(numberOrNameOrId)) return Number(numberOrNameOrId)
-    if (bible?.books) return bible.books.findIndex((a) => a.name === numberOrNameOrId || a.id === numberOrNameOrId)
 
-    const index = Object.entries(getDefaultBooks().data).findIndex(([id, name]) => name === numberOrNameOrId || id === numberOrNameOrId)
-    return index + 1
+    if (bible?.books) {
+        const bookIndex = bible.books.findIndex((a) => a.name === numberOrNameOrId || a.id === numberOrNameOrId)
+        if (bookIndex > -1) return bookIndex + 1
+    }
+
+    const abbrIndex = Object.entries(getDefaultBooks().data).findIndex(([id, name]) => name === numberOrNameOrId || id === numberOrNameOrId)
+    if (abbrIndex > -1) return abbrIndex + 1
+
+    if (bookIndexFallback) return bookIndexFallback + 1
+    return 0
 }
 
 export function getBookName(numberOrId: number | string, bible?: Bible) {
-    let bibleName = bible?.books.find((a) => a.number === numberOrId || a.id === numberOrId)
+    let bibleName = bible?.books.find((a) => Number(a.number) === numberOrId || a.number === numberOrId || a.id === numberOrId)
     if (bibleName?.name) return bibleName.name
 
     if (isNumber(numberOrId)) return getDefaultBooks().byNumber(Number(numberOrId))

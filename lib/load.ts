@@ -56,9 +56,9 @@ export function validateBible(bible: Bible) {
     if (!bible.books[0]?.chapters[0]?.verses[0]?.text?.length) incomplete("No initial text!")
 
     // set book names/id if missing
-    bible.books = bible.books.map((book) => {
+    bible.books = bible.books.map((book, i) => {
         if (!book.name) book.name = getBookName(book.id || book.number)
-        if (!book.number) book.number = getBookNumber(book.name)
+        if (!book.number) book.number = getBookNumber(book.name, bible, i)
         if (!book.id) book.id = getDefaultBooks().ids[book.number - 1]
 
         return book
