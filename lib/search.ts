@@ -70,10 +70,14 @@ export function _bookSearch(bible: Bible, searchValue: string) {
             if (bookName.includes(name)) matches.push(book)
         }
 
+        const booksStartingWithSearch = bible.books.filter((a) => removeSpaces(formatText(a.name)).startsWith(name))
+
         // find any abbreviation matches
-        for (let book of bible.books) {
-            let abbr = getDefaultBooks().ids[book.number - 1] || ""
-            if (abbr.toLowerCase() === name) return [book]
+        if (booksStartingWithSearch.length < 2) {
+            for (let book of bible.books) {
+                let abbr = getDefaultBooks().ids[book.number - 1] || ""
+                if (abbr.toLowerCase() === name) return [book]
+            }
         }
 
         // remove books with numbers if no number at search start (John)

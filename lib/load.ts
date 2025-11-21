@@ -1,6 +1,7 @@
 import { Bible } from "./Bible"
 import { getDefaultBooks } from "./defaults"
 import { getBookName, getBookNumber } from "./get"
+import { isNumber } from "./util"
 
 export async function bibleFromFile(filePath: string) {
     let content = ""
@@ -55,11 +56,13 @@ export function validateBible(bible: Bible) {
     if (!bible.books[0]?.chapters[0]?.verses?.length) incomplete("No initial verses!")
     if (!bible.books[0]?.chapters[0]?.verses[0]?.text?.length) incomplete("No initial text!")
 
-    // set book names/id if missing
+    // set book names/id/number if missing
     bible.books = bible.books.map((book, i) => {
         if (!book.name) book.name = getBookName(book.id || book.number)
-        if (!book.number) book.number = getBookNumber(book.name, bible, i)
         if (!book.id) book.id = getDefaultBooks().ids[book.number - 1]
+
+        if (!book.number || !isNumber(book.number)) book.number = getBookNumber(book.name, bible, i)
+        if (typeof book.number === "string") book.number = Number(book.number)
 
         return book
     })
