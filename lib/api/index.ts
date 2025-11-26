@@ -273,6 +273,7 @@ export async function ApiBible(apiKey: string, bibleKey: string, apiUrl?: string
      */
     async function textSearch(value: string, limit: number = 50) {
         const result = await bibleData.contentSearch(value, { limit })
+        if (!result) return []
 
         // convert result to VerseReference[]
         return result.map((r) => {

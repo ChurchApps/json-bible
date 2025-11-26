@@ -45,6 +45,8 @@ export default function ApiBibleHelper(key: string, customApiUrl?: string) {
 
         // GEN
         async function getChapters(bookId: string) {
+            if (!bookId) return { json: [], chaptersData: [] }
+
             const chaptersData = await getApiChapters(bookId)
 
             const json = chaptersData.map((chapter) => {
@@ -87,6 +89,7 @@ export default function ApiBibleHelper(key: string, customApiUrl?: string) {
 
         // no api key needed, just the bible id
         async function contentSearch(query: string, { limit } = { limit: 20 }) {
+            query = encodeURIComponent(query.trim())
             const url = `${bibleUrl}/search?query=${query}&limit=${limit}`
             return ((await fetchWrapper(url, headers, 14)) as BibleContentSearchResult).verses
         }
