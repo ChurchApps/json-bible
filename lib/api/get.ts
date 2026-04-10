@@ -103,7 +103,8 @@ export default function ApiBibleHelper(key: string, customApiUrl?: string) {
 // HTTP
 
 export function fetchWrapper(url: string, headers: any, cacheTimeDays: number) {
-    if (getCachedContent(url)) return Promise.resolve(getCachedContent(url, cacheTimeDays))
+    const cached = getCachedContent(url, cacheTimeDays)
+    if (cached) return Promise.resolve(cached)
 
     // console.info("Fetching:", url)
     return fetch(url, { headers })
