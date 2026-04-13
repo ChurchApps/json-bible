@@ -70,13 +70,23 @@ export function _bookSearch(bible: Bible, searchValue: string) {
             if (bookName.includes(name)) matches.push(book)
         }
 
+        // remove any books that starts with the full name of another book (e.g. Johannes vs Johannes' Åpenbaring)
+        if (matches.length > 1) {
+            const shortestMatchName = matches.reduce((shortest, book) => (book.name.length < shortest.length ? book.name : shortest), matches[0].name)
+            matches = matches.filter((a) => a.name === shortestMatchName || !a.name.startsWith(shortestMatchName))
+        }
+
         const booksStartingWithSearch = bible.books.filter((a) => removeSpaces(formatText(a.name)).startsWith(name))
 
         // find any abbreviation matches
         if (booksStartingWithSearch.length < 2) {
             for (let book of bible.books) {
-                let abbr = getDefaultBooks().ids[book.number - 1] || ""
-                if (abbr.toLowerCase() === name) return [book]
+                if (book.abbreviation?.toLowerCase() === name) return [book]
+                // only match by index if books count are 66
+                if (bible.books.length === 66) {
+                    let abbr = getDefaultBooks().ids[book.number - 1] || ""
+                    if (abbr.toLowerCase() === name) return [book]
+                }
             }
         }
 

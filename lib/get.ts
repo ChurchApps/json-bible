@@ -145,6 +145,7 @@ export function formatText(value: string, html: boolean = false) {
 }
 
 function getVerseNumber(verse: Verse) {
+    if (verse.number === undefined) return ""
     let number = verse.number.toString()
     if (verse.endNumber) number += `-${verse.endNumber}`
     return number
