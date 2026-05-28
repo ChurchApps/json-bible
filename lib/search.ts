@@ -91,8 +91,16 @@ export function _bookSearch(bible: Bible, searchValue: string) {
         }
 
         // remove books with numbers if no number at search start (John)
+        // Uses the title portion only — strips any leading code prefix like "47-0412 · "
+        // so that books named with a code + title pattern still match by title.
+        // Preserves correct exclusion of "1 John", "2 Kings" etc. for standard Bibles.
         const hasNum = (str: string) => /\d/.test(str)
-        if (!hasNum(name[0])) matches = matches.filter((book) => !hasNum(book.name))
+        if (!hasNum(name[0])) {
+            matches = matches.filter((book) => {
+                const titleForCheck = book.name.replace(/^\d{2}-\d{4}[A-Z]?\s*[\u00b7\u2022\-]\s*/u, '')
+                return !hasNum(titleForCheck[0])
+            })
+        }
 
         return matches
     }
