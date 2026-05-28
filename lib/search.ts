@@ -90,9 +90,12 @@ export function _bookSearch(bible: Bible, searchValue: string) {
             }
         }
 
-        // remove books with numbers if no number at search start (John)
+        // remove books with numbers if no number at search start (John) - when there are matches
         const hasNum = (str: string) => /\d/.test(str)
-        if (!hasNum(name[0])) matches = matches.filter((book) => !hasNum(book.name))
+        if (!hasNum(name[0]) && name.length > 1) {
+            const noNumberMatches = matches.filter((book) => !hasNum(book.name))
+            if (noNumberMatches.length) matches = noNumberMatches
+        }
 
         return matches
     }
