@@ -111,52 +111,75 @@ export function _bookSearch(bible: Bible, searchValue: string) {
 
 // TEXT SEARCH //
 
-let textSearchCache: { [key: string]: string } = {}
+const formattedTextCache = new Map<string, string>()
+function getFormattedVerse(text: string) {
+    const cached = formattedTextCache.get(text)
+    if (cached !== undefined) return cached
+
+    const formatted = formatText(text)
+    formattedTextCache.set(text, formatted)
+
+    return formatted
+}
+
+const textSearchCache = new Map<string, VerseReference[]>()
 export function _textSearch(bible: Bible, searchValue: string, limit: number, bookNumber?: number) {
     searchValue = formatText(searchValue).trim()
-    if (!searchValue.length) return []
+    if (!searchValue) return []
 
-    const cacheId = searchValue + limit + (bookNumber ?? "")
-    if (textSearchCache[cacheId]) return JSON.parse(textSearchCache[cacheId]) as VerseReference[]
+    // cache results for identical searches
+    const cacheId = `${bible.name}|${searchValue}|${limit}|${bookNumber ?? ""}`
+    const cached = textSearchCache.get(cacheId)
+    if (cached) return cached
 
-    const matches = bibleSearch().slice(0, limit)
+    // split into individual words so we can match verses containing all words even if the exact phrase is absent
+    const searchWords = searchValue.split(/\s+/)
 
-    textSearchCache[cacheId] = JSON.stringify(matches)
-    return matches
+    // search in a specific book or all books
+    const books = bookNumber === undefined ? bible.books : [bible.books[getBookIndex(bible, bookNumber)]]
 
-    /////
+    const matches: VerseReference[] = []
+    for (const book of books) {
+        for (const chapter of book.chapters) {
+            const verses: number[] = []
 
-    function bibleSearch() {
-        const searchWords = searchValue.split(" ")
-        const books = bookNumber === undefined ? bible.books : [bible.books[getBookIndex(bible, bookNumber)]]
+            for (const verse of chapter.verses) {
+                const verseValue = getFormattedVerse(verse.text ?? "")
 
-        let matches: VerseReference[] = []
+                // check if the full phrase exists in the verse
+                let isMatch = verseValue.includes(searchValue)
 
-        for (let book of books) {
-            for (let chapter of book.chapters) {
-                let verses: number[] = []
+                // or check whether every search word exists somewhere in the verse
+                if (!isMatch) {
+                    isMatch = true
 
-                for (let verse of chapter.verses) {
-                    const verseValue = formatText(verse.text || "")
-
-                    // check if the full verse, or one of the words contains the search value
-                    if (verseValue.includes(searchValue) || searchWords.every((word) => verseValue.includes(word))) {
-                        verses.push(verse.number)
+                    for (const word of searchWords) {
+                        if (!verseValue.includes(word)) {
+                            isMatch = false
+                            break
+                        }
                     }
                 }
 
-                if (verses.length) {
-                    const reference = getVerseReferences(bible, { book: book.number, chapter: chapter.number, verses })
-                    matches.push(...reference)
+                if (isMatch) verses.push(verse.number)
+            }
 
-                    // return early if we have reached the limit
-                    if (matches.length >= limit) return matches
+            if (verses.length) {
+                const reference = getVerseReferences(bible, { book: book.number, chapter: chapter.number, verses })
+                matches.push(...reference)
+
+                // return early once we have enough results
+                if (matches.length >= limit) {
+                    const result = matches.slice(0, limit)
+                    textSearchCache.set(cacheId, result)
+                    return result
                 }
             }
         }
-
-        return matches
     }
+
+    textSearchCache.set(cacheId, matches)
+    return matches
 }
 
 // HELPERS //
