@@ -110,7 +110,7 @@ function parseUniversalReference(ref: UniversalReference) {
 
 // Genesis 1:1-3 / GEN 1:1-3 / GEN.1.1-3 = 1.1.1-3
 function referenceStringToId(ref: string) {
-    const regex = /^(?:[\p{Lu}]+|[0-9]+)(?:\.[0-9]+)?(?:\.[0-9+-]+)?$/u
+    const regex = /^(?:[\p{L}]+|[0-9]+)(?:\.[0-9]+)?(?:\.[0-9+-]+)?$/u
     const isId = ref.match(regex) !== null
     if (isId) return parseReferenceId(ref)
 
@@ -127,7 +127,7 @@ function referenceStringToId(ref: string) {
 // "Genesis 1:1-3" = { book: "Genesis ", chapter: 1, verses: [1, 2, 3] }
 function splitReferenceString(ref: string) {
     // (:,.) allowed between chapter/verse - (-+) allowed between verses
-    const regex = /(?<book>(?:\d+\.?\s?)?[\p{L}\p{M}](?:[\p{L}\p{M}\s']*[\p{L}\p{M}])?)(?:\s(?<chapter>\d+))?(?:[:,.](?<verses>[0-9,.\-+]+))?/u
+    const regex = /(?<book>(?:\d+\.?\s?)?[\p{L}\p{M}](?:[\p{L}\p{M}\s'\p{Pd}]*[\p{L}\p{M}])?)(?:\s(?<chapter>\d+))?(?:[:,.](?<verses>[0-9,.\-+]+))?/u
     const match = ref.match(regex)
 
     if (!match) return { book: "", chapter: "", verses: "" }

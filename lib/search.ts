@@ -191,7 +191,7 @@ function formatText(text: string) {
             .normalize("NFD")
             .replace(/\p{Diacritic}/gu, "")
             // remove special characters
-            .replace(/[`!*()\-?;:'",.]/gi, "")
+            .replace(/[`!*()\-?;:'",.\p{Pd}]/gu, "")
             .toLowerCase()
     )
 }
