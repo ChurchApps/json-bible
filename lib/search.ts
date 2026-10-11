@@ -13,7 +13,7 @@ export function _bookSearch(bible: Bible, searchValue: string) {
     const { name, reference } = getReferenceFromSearchString(searchValue)
     if (!reference || !name) return finish()
 
-    let books = findBooks(name)
+    let books = findBooks(name, !!reference.chapter)
     if (books.length !== 1) return finish()
 
     const book = books[0]
@@ -60,7 +60,7 @@ export function _bookSearch(bible: Bible, searchValue: string) {
         return returnValue
     }
 
-    function findBooks(name: string) {
+    function findBooks(name: string, hasChapter: boolean) {
         name = removeSpaces(formatText(name))
 
         let matches = []
@@ -74,6 +74,14 @@ export function _bookSearch(bible: Bible, searchValue: string) {
         if (matches.length > 1) {
             const shortestMatchName = matches.reduce((shortest, book) => (book.name.length < shortest.length ? book.name : shortest), matches[0].name)
             matches = matches.filter((a) => a.name === shortestMatchName || !a.name.startsWith(shortestMatchName))
+        }
+
+        // a typed chapter means the book is complete, so match the abbreviations from the Bible file exactly,
+        // also when other books start with the same text (Korean "마 5" is Matthew, while 마가복음 also starts with 마)
+        // not before that, as an input method can pass through another book's abbreviation (요이 on the way to 요일)
+        if (hasChapter) {
+            const abbreviationMatch = bible.books.find((book) => book.abbreviation && removeSpaces(formatText(book.abbreviation)) === name)
+            if (abbreviationMatch) return [abbreviationMatch]
         }
 
         const booksStartingWithSearch = bible.books.filter((a) => removeSpaces(formatText(a.name)).startsWith(name))
