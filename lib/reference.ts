@@ -127,7 +127,8 @@ function referenceStringToId(ref: string) {
 // "Genesis 1:1-3" = { book: "Genesis ", chapter: 1, verses: [1, 2, 3] }
 function splitReferenceString(ref: string) {
     // (:,.) allowed between chapter/verse - (-+) allowed between verses
-    const regex = /(?<book>(?:\d+\.?\s?)?[\p{L}\p{M}](?:[\p{L}\p{M}\s'\p{Pd}]*[\p{L}\p{M}])?)(?:\s(?<chapter>\d+))?(?:[:,.](?<verses>[0-9,.\-+]+))?/u
+    // book names can have numbers inside, but end with a letter (Korean 요한1서 = 1 John)
+    const regex = /(?<book>(?:\d+\.?\s?)?[\p{L}\p{M}](?:[\p{L}\p{M}\d\s'\p{Pd}]*[\p{L}\p{M}])?)(?:\s(?<chapter>\d+))?(?:[:,.](?<verses>[0-9,.\-+]+))?/u
     const match = ref.match(regex)
 
     if (!match) return { book: "", chapter: "", verses: "" }
