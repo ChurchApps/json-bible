@@ -126,17 +126,21 @@ function referenceStringToId(ref: string) {
 
 // "Genesis 1:1-3" = { book: "Genesis ", chapter: 1, verses: [1, 2, 3] }
 function splitReferenceString(ref: string) {
+    const value = ref.trim()
+    if (!value) return { book: "", chapter: "", verses: "" }
+
+    // book token allows: unicode letters/marks, spaces, apostrophe, dashes, and internal digits
+    const bookRegex = /^(?:\d+\.?\s?)?[\p{L}\p{M}](?:[\p{L}\p{M}\d\s'\p{Pd}]*[\p{L}\p{M}\d])?$/u
     // (:,.) allowed between chapter/verse - (-+) allowed between verses
-    const regex = /(?<book>(?:\d+\.?\s?)?[\p{L}\p{M}](?:[\p{L}\p{M}\d\s'\p{Pd}]*[\p{L}\p{M}\d])?)(?:\s(?<chapter>\d+))?(?:[:,.](?<verses>[0-9,.\-+]+))?/u
-    const match = ref.match(regex)
+    const tailMatch = value.match(/(?:\s+(?<chapter>\d+)(?:[:,.](?<verses>[0-9,.\-+]+))?|[:,.](?<versesOnly>[0-9,.\-+]+))$/)
 
-    if (!match) return { book: "", chapter: "", verses: "" }
-    const groups = match.groups || {}
+    const book = value.slice(0, tailMatch ? tailMatch.index : value.length).trimEnd()
+    if (!book || !bookRegex.test(book)) return { book: "", chapter: "", verses: "" }
 
-    const book = groups.book?.trim() || ""
-    const chapter = groups.chapter || ""
-    const verses = groups.verses || ""
+    if (!tailMatch) return { book, chapter: "", verses: "" }
 
+    const chapter = tailMatch.groups?.chapter || ""
+    const verses = tailMatch.groups?.verses || tailMatch.groups?.versesOnly || ""
     return { book, chapter, verses }
 }
 
