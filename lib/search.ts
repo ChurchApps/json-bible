@@ -64,6 +64,17 @@ export function _bookSearch(bible: Bible, searchValue: string) {
         const normalizeBookName = (value: string) => removeSpaces(formatText(value))
         name = normalizeBookName(name)
 
+        // find any abbreviation matches
+        for (let book of bible.books) {
+            if (book.abbreviation && normalizeBookName(book.abbreviation) === name) return [book]
+
+            // only match by index if books count are 66
+            if (bible.books.length === 66) {
+                let abbr = getDefaultBooks().ids[book.number - 1] || ""
+                if (normalizeBookName(abbr) === name) return [book]
+            }
+        }
+
         let matches = []
         for (let book of bible.books) {
             const bookName = normalizeBookName(book.name)
@@ -75,20 +86,6 @@ export function _bookSearch(bible: Bible, searchValue: string) {
         if (matches.length > 1) {
             const shortestMatchName = matches.reduce((shortest, book) => (book.name.length < shortest.length ? book.name : shortest), matches[0].name)
             matches = matches.filter((a) => a.name === shortestMatchName || !a.name.startsWith(shortestMatchName))
-        }
-
-        const booksStartingWithSearch = bible.books.filter((a) => normalizeBookName(a.name).startsWith(name))
-
-        // find any abbreviation matches
-        if (booksStartingWithSearch.length < 2) {
-            for (let book of bible.books) {
-                if (book.abbreviation?.toLowerCase() === name) return [book]
-                // only match by index if books count are 66
-                if (bible.books.length === 66) {
-                    let abbr = getDefaultBooks().ids[book.number - 1] || ""
-                    if (abbr.toLowerCase() === name) return [book]
-                }
-            }
         }
 
         // remove books with numbers if no number at search start (John) - when there are matches
