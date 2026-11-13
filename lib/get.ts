@@ -88,6 +88,7 @@ export function getBookAbbreviation(bible: Bible, bookIndex: number) {
     if (!currentBook) return ""
 
     if (currentBook.abbreviation) return currentBook.abbreviation
+    if (typeof currentBook.name !== "string") return ""
 
     const abbr = currentBook.id || ""
     const name = currentBook.name
