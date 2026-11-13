@@ -64,22 +64,25 @@ export function _bookSearch(bible: Bible, searchValue: string) {
         const normalizeBookName = (value: string) => removeSpaces(formatText(value))
         name = normalizeBookName(name)
 
-        // find any abbreviation matches
-        for (let book of bible.books) {
-            if (book.abbreviation && normalizeBookName(book.abbreviation) === name) return [book]
-
-            // only match by index if books count are 66
-            if (bible.books.length === 66) {
-                let abbr = getDefaultBooks().ids[book.number - 1] || ""
-                if (normalizeBookName(abbr) === name) return [book]
-            }
-        }
-
         let matches = []
         for (let book of bible.books) {
             const bookName = normalizeBookName(book.name)
             if (bookName === name) return [book]
             if (bookName.startsWith(name)) matches.push(book)
+        }
+
+        const allowAbbreviationLookup = matches.length < 2 || searchValue.endsWith(" ") || reference.chapter || reference.verses.length
+        if (allowAbbreviationLookup) {
+            // find any abbreviation matches
+            for (let book of bible.books) {
+                if (book.abbreviation && normalizeBookName(book.abbreviation) === name) return [book]
+
+                // only match by index if books count are 66
+                if (bible.books.length === 66) {
+                    let abbr = getDefaultBooks().ids[book.number - 1] || ""
+                    if (normalizeBookName(abbr) === name) return [book]
+                }
+            }
         }
 
         // remove any books that start with the full name of another book (e.g. Johannes vs Johannes' Åpenbaring)
