@@ -10,7 +10,7 @@
     "scripts": {
         "dev": "node dist/index.js",
         "build": "tsc && node add-js-extension.js",
-        "prepack": "npm run build",
+        "prepare": "npm run build",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "vassbo",
