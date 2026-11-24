@@ -5,7 +5,8 @@
     "main": "dist/index.js",
     "type": "module",
     "files": [
-        "dist"
+        "dist",
+        "lib"
     ],
     "scripts": {
         "dev": "node dist/index.js",
