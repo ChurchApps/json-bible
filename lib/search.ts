@@ -67,8 +67,14 @@ export function _bookSearch(bible: Bible, searchValue: string) {
         let matches = []
         for (let book of bible.books) {
             const bookName = normalizeBookName(book.name)
-            if (bookName === name) return [book]
             if (bookName.startsWith(name)) matches.push(book)
+        }
+
+        // find exact book match, and return if there's just one match or an existing book
+        const exactMatch = matches.find((book) => normalizeBookName(book.name) === name)
+        if (exactMatch) {
+            if (matches.length === 1 || searchValue.endsWith(" ") || reference.chapter || reference.verses.length) return [exactMatch]
+            return matches
         }
 
         const allowAbbreviationLookup = matches.length < 2 || searchValue.endsWith(" ") || reference.chapter || reference.verses.length
