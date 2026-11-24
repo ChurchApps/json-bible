@@ -31,6 +31,13 @@ function addJsExtension(dir) {
                 return match
             })
 
+            content = content.replace(/(import\s+["'])([^'"]+?)(["'])/g, (match, p1, p2, p3) => {
+                if (!p2.endsWith(".js") && (p2.startsWith(".") || p2.startsWith("/"))) {
+                    return `${p1}${p2}.js${p3}`
+                }
+                return match
+            })
+
             fs.writeFileSync(fullPath, content, "utf-8")
         }
     })
